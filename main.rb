@@ -9,13 +9,15 @@ def regex_form(category)
 	when "title"
 		reg_form = /MV:\s+(.+)? \s \(([0-9]+)\)/ix
 	when "times"
+		reg_form = /^(.+) \s+ \(([0-9]+)\) \s+ (?:[a-z]+:)?([0-9]+)/ix
 	when "budgeting"
 		reg_form = /BT:\s+USD\s+([0-9,.]+)/ix
 	when "mpaa_ratings"
-	when "ratings"
 		reg_form = /RE: Rated (.*?) /i
+	when "ratings"
+		reg_form = /([0-9.\*]+) \s+ ([0-9]+) \s+ ([0-9.]+) \s+ (.+)? \s+ \(([0-9]+)\)/ix
 	when "genres"
-	
+		reg_form = /^(.+)? \s+ \(([0-9]+)\) (?:\s*[({].*[})])*  \s+(.*?)$/ix	
 	end
 	
 	return reg_form
@@ -73,7 +75,7 @@ def add_budgeting
 	datacom = $db.prepare("UPDATE Movies set budget=? WHERE title=? AND year=?;")
 	$db.transaction do 
 		File.new("data/business.list").each(hyphens) do |l|
-			if match = title_re.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
+			if match = title_reg.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
 				datacom.execute!(bt[1].gsub!(",","").to_i, match[1].tr(',".',''), match[2].to_i) 
 			end
 		end
@@ -82,15 +84,15 @@ end
 
 def add_mpaa_ratings_reasons
 	hyphens = "-" * 79
-	rating_re = regex_form("mpaa_ratings_reasons")
+	mpaa_reg = regex_form("mpaa_ratings_reasons")
 	title_reg = regex_form("title")
 
-	stmt = $db.prepare("UPDATE Movies set mpaa_rating=? WHERE title=? AND year=?;")
+	datacom = $db.prepare("UPDATE Movies set mpaa_rating=? WHERE title=? AND year=?;")
 	i = 0
 	$db.transaction do 
 		File.new("data/mpaa-ratings-reasons.list").each(hyphens) do |l|
-			if match = title_re.match(l.to_s) and rt = rating_re.match(l.to_s)
-				stmt.execute!(rt[1], match[1].tr(',".',''), match[2].to_i)
+			if match = title_reg.match(l.to_s) and rt = mpaa_reg.match(l.to_s)
+				datacom.execute!(rt[1], match[1].tr(',".',''), match[2].to_i)
 			end
 		end
 	end
@@ -114,7 +116,7 @@ def add_all
 end
 
 if __FILE__ == $0
-	import_all
+	add_all
 	
 	puts "Movies added:"
 	puts Movie.count()
