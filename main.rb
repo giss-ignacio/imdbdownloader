@@ -38,8 +38,3 @@ if __FILE__ == $0
 	
 end
 
-#puts Movie.count( "budget > 0")
-#puts Movie.count( "length > 0")
-#puts Movie.count( "budget > 0 and length > 0")
-#puts Movie.count( "imdb_votes > 0 and length > 0")
-#puts Movie.count( "budget > 0 and length > 0 and imdb_votes > 0")
