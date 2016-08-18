@@ -1,22 +1,32 @@
 require 'rubygems'
 require 'sqlite3'
 
+MOVIES = "movies"
+RUNNING_TIMES = "running_times"
+BUDGETING = "budgeting"
+TITLE = "title"
+HYPHENS = "-" * 79
+MPAA_RAT = "mpaa_ratings"
+RATINGS = "ratings"
+GENRES = "genres"
+
+
 def regex_form(category)
 	reg_form
 	puts case category
-	when "movies"
+	when MOVIES
 		reg_form = /^(.+) \s+ \([0-9]+\) \s? (\{.+\})? (\(.+\))? \s+ ([0-9]+(-[0-9\?]+)?)$/ix
-	when "title"
+	when TITLE
 		reg_form = /MV:\s+(.+)? \s \(([0-9]+)\)/ix
-	when "times"
+	when RUNNING_TIMES
 		reg_form = /^(.+) \s+ \(([0-9]+)\) \s+ (?:[a-z]+:)?([0-9]+)/ix
-	when "budgeting"
+	when BUDGETING
 		reg_form = /BT:\s+USD\s+([0-9,.]+)/ix
-	when "mpaa_ratings"
+	when MPAA_RAT
 		reg_form = /RE: Rated (.*?) /i
-	when "ratings"
+	when RATINGS
 		reg_form = /([0-9.\*]+) \s+ ([0-9]+) \s+ ([0-9.]+) \s+ (.+)? \s+ \(([0-9]+)\)/ix
-	when "genres"
+	when GENRES
 		reg_form = /^(.+)? \s+ \(([0-9]+)\) (?:\s*[({].*[})])*  \s+(.*?)$/ix	
 	end
 	
@@ -25,7 +35,7 @@ def regex_form(category)
 end
 
 def add_movies	
-	movies_reg = regex_form("movies")
+	movies_reg = regex_form(MOVIES)
 		
 	match_prev = ['', '', '', '', '']
 	series = ""
@@ -51,14 +61,14 @@ def add_movies
 		
 end
 
-def add_times(data)
-	times_reg = regex_form("times")	
+def add_running_times(data)
+	running_times_reg = regex_form(TIMES)	
 
 	datacom = data.prepare("UPDATE Movies set length=? WHERE title=? AND year=?;")
 	i = 0
   data.transaction do 
 		File.new("data/running-times.list").each_line do |l|
-			if match = time_re.match(l)
+			if match = running_times_reg.match(l)
 				datacom.execute!(match[3].to_i, match[1].tr(',".',''), match[2].to_i)
 			end
 		end
@@ -104,7 +114,7 @@ def add_all
 	puts "Processing movies database"
 	add_movies(data)
 	
-	add_times(data)
+	add_running_times(data)
 	
 	add_budgeting(data)
 	
