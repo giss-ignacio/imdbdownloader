@@ -108,6 +108,38 @@ def add_mpaa_ratings_reasons
 	end
 end
 
+def add_genres	
+	genres_reg = regex_form(GENRES)	
+	
+	datacom = $db.prepare("INSERT INTO Genres (genre, movie_id) VALUES (?, (SELECT id FROM Movies WHERE title=? AND year=?));")
+	$db.transaction do 
+		$db.execute "DELETE FROM Genres;"
+		
+		File.new("data/genres.list").each_line do |l|			
+			if match = genres_reg.match(l)				
+				datacom.execute!(match[3], match[1].tr(',".',''), match[2].to_i)
+			end
+		end
+		puts
+	end
+end
+
+def add_ratings	
+	ratings_reg = regex_form(RATINGS)
+
+	datacom = $db.prepare("UPDATE Movies set imdb_votes=?, imdb_rating=?, imdb_rating_votes=? WHERE title=? AND year=?;")
+	$db.transaction
+	
+	File.new("data/ratings.list").each_line do |l|
+		if match = ratings_reg.match(l)
+			rating, votes, outof10, title, year = match[1], match[2], match[3], match[4], match[5]
+			datacom.execute!(votes, outof10, rating, title.tr(',".',''), year)
+		end
+	end
+	$db.commit
+	
+end
+
 def add_all
 	data = SQLite3::Database.new( "movies.sqlite3" )
 	
