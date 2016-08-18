@@ -24,7 +24,7 @@ def add_movies
 	datacom = data.prepare("INSERT INTO Movies (title, year, is_series) VALUES (?, ?, ?);")
 	i = 0
 	data.transaction do
-		$data.execute "DELETE FROM Movies;"
+		data.execute "DELETE FROM Movies;"
 	
 		File.new("data/movies.list").each_line do |l|
 			if match = movies_reg.match(l)			
@@ -39,9 +39,24 @@ def add_movies
 			end
 		end
 	end
-	
-	puts
+		
 end
+
+def add_times(data)
+	times_reg = reg_form("times")	
+
+	datacom = data.prepare("UPDATE Movies set length=? WHERE title=? AND year=?;")
+	i = 0
+  data.transaction do 
+		File.new("data/running-times.list").each_line do |l|
+			if match = time_re.match(l)
+				datacom.execute!(match[3].to_i, match[1].tr(',".',''), match[2].to_i)
+			end
+		end
+  end
+		
+end
+
 
 def add_all
 	data = SQLite3::Database.new( "movies.sqlite3" )
@@ -49,15 +64,15 @@ def add_all
 	puts "Processing movies database"
 	add_movies(data)
 	
-	add_times
+	add_times(data)
 	
-	add_budgets
+	add_budgets(data)
 	
-	add_mpaa_ratings
+	add_mpaa_ratings(data)
 	
-	add_ratings
+	add_ratings(data)
 	
-	add_genres
+	add_genres(data)
 end
 
 if __FILE__ == $0
