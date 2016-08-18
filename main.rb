@@ -6,12 +6,18 @@ def regex_form(category)
 	puts case category
 	when "movies"
 		reg_form = /^(.+) \s+ \([0-9]+\) \s? (\{.+\})? (\(.+\))? \s+ ([0-9]+(-[0-9\?]+)?)$/ix
+	when "title"
+		reg_form = /MV:\s+(.+)? \s \(([0-9]+)\)/ix
+	when "times"
+	when "budgeting"
+		reg_form = /BT:\s+USD\s+([0-9,.]+)/ix
 	when "mpaa_ratings"
 	when "ratings"
 	when "genres"
 	
 	end
-
+	
+	return reg_form
 
 end
 
@@ -43,7 +49,7 @@ def add_movies
 end
 
 def add_times(data)
-	times_reg = reg_form("times")	
+	times_reg = regex_form("times")	
 
 	datacom = data.prepare("UPDATE Movies set length=? WHERE title=? AND year=?;")
 	i = 0
@@ -57,6 +63,20 @@ def add_times(data)
 		
 end
 
+
+def add_budgeting	
+	title_re = regex_form("title")
+	budgeting_reg = regex_form("budgeting")
+	
+	datacom = $db.prepare("UPDATE Movies set budget=? WHERE title=? AND year=?;")
+	$db.transaction do 
+		File.new("data/business.list").each(dashes) do |l|
+			if match = title_re.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
+				datacom.execute!(bt[1].gsub!(",","").to_i, match[1].tr(',".',''), match[2].to_i) 
+			end
+		end
+	end
+end
 
 def add_all
 	data = SQLite3::Database.new( "movies.sqlite3" )
