@@ -1,6 +1,6 @@
 require 'rubygems'
-require 'sqlite3'
-require 'net/ftp'
+require_relative 'download'
+require_relative 'db_handle'
 
 MOVIES = "movies"
 RUNNING_TIMES = "running_times"
@@ -10,44 +10,7 @@ HYPHENS = "-" * 79
 MPAA_RAT = "mpaa_ratings_reasons"
 RATINGS = "ratings"
 GENRES = "genres"
-FTP_SITE = "ftp.fu-berlin.de"
-FTP_DIR = "/pub/misc/movies/database"
 
-
-def download_files
-	ftp = Net::FTP::new(FTP_SITE)	
-	ftp.passive = true
-	ftp.login("ftp", "guest")
-		
-	
-	ftp.chdir(FTP_DIR)
-	fileList = ftp.list('c*.gz')	
-	fileList.each do |file|
-		filename = file.split.last
-		puts "Downloading " + filename		
-
-		filesize = ftp.size(filename)
-		transferred = 0
-		perc_orig = 0
-		filesizemb = filesize/1048576
-		puts "File size: #{filesizemb} MB"
-		ftp.getbinaryfile(filename, "data/#{filename}", 1024) { |data|
-		transferred += data.size
-		perc_upd = ((transferred).to_f/filesize.to_f)*100
-		if perc_orig < perc_upd -1
-			print "#{perc_upd.round}% complete \r"
-			$stdout.flush
-			perc_orig = perc_upd
-		end		
-		}
-		$stdout.flush
-		if perc_orig >= 99
-			puts "100% complete"
-		end
-		
-	end
-	ftp.close
-end
 
 
 def regex_form(category)
@@ -200,9 +163,10 @@ if __FILE__ == $0
 
 	#download_files
 	#add_all
+	create_db
 	
 	puts "Movies added:"
-	puts Movie.count()
+	#puts Movie.count()
 	
 end
 
