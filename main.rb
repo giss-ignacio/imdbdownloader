@@ -24,21 +24,20 @@ def download_files
 	fileList = ftp.list('c*.gz')	
 	fileList.each do |file|
 		filename = file.split.last
-		puts "Downloading " + filename
-		#ftp.getbinaryfile(filename)
+		puts "Downloading " + filename		
 
 		filesize = ftp.size(filename)
 		transferred = 0
 		perc_orig = 0
 		filesizemb = filesize/1048576
-		puts "Beginning download, file size: #{filesizemb} MB"
+		puts "File size: #{filesizemb} MB"
 		ftp.getbinaryfile(filename, "data/#{filename}", 1024) { |data|
 		transferred += data.size
-		percent_finished = ((transferred).to_f/filesize.to_f)*100
-		if perc_orig < percent_finished -1
-			print "#{percent_finished.round}% complete \r"
+		perc_upd = ((transferred).to_f/filesize.to_f)*100
+		if perc_orig < perc_upd -1
+			print "#{perc_upd.round}% complete \r"
 			$stdout.flush
-			perc_orig = percent_finished
+			perc_orig = perc_upd
 		end		
 		}
 		$stdout.flush
