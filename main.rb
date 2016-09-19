@@ -1,4 +1,5 @@
 require 'rubygems'
+require "highline/import"
 require_relative 'download'
 require_relative 'db_handle'
 
@@ -159,13 +160,36 @@ def add_all
 	add_genres(data)
 end
 
+def do_everything
+	download_files
+	add_all
+end
+
+def show_menu
+	Gem.win_platform? ? (system "cls") : (system "clear")
+	puts
+	loop do
+		choose do |menu|
+			puts "Imdbdownloader \n\n"
+			menu.prompt = "Select an option: "
+			menu.choice(:'Do everything') { do_everything }
+			menu.choice(:'Download files') { download_and_extract }
+			menu.choice(:'Add all movies to database') { add_all }
+			menu.choice(:Quit, "Exit program.") { exit }
+		end
+	end
+end
+
+
 if __FILE__ == $0
 
 
 	#download_files
 	#add_all
 	#data = create_db
-	extract_files
+	#extract_files
+	
+	show_menu
 	
 	puts "Movies added:"
 	#puts Movie.count()

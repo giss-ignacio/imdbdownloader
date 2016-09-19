@@ -44,10 +44,15 @@ end
 def extract_files
 	Dir.glob('#{DLD_DIR}/*.gz') do |gz_file|
 		Zlib::GzipReader.open(gz_file) do | input_stream |
-			puts gz_file
+			puts "Extracting #{gz_file} "
 			File.open(gz_file.chomp('.gz'), "w") do |output_stream|
 				IO.copy_stream(input_stream, output_stream)
 			end
 		end	
 	end	
+end
+
+def download_and_extract
+	download_files
+	extract_files
 end
