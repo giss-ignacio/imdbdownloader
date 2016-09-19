@@ -1,4 +1,6 @@
 require 'net/ftp'
+require 'rubygems/package'
+require 'zlib'
 
 FTP_SITE = "ftp.fu-berlin.de"
 FTP_DIR = "/pub/misc/movies/database"
@@ -37,4 +39,15 @@ def download_files
 		
 	end
 	ftp.close
+end
+
+def extract_files
+	Dir.glob('data/*.gz') do |gz_file|
+		Zlib::GzipReader.open(gz_file) do | input_stream |
+			puts gz_file
+			File.open(gz_file.chomp('.gz'), "w") do |output_stream|
+				IO.copy_stream(input_stream, output_stream)
+			end
+		end	
+	end	
 end

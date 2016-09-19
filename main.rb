@@ -47,7 +47,7 @@ def add_movies
 	data.transaction do
 		data.execute "DELETE FROM Movies;"
 	
-		File.new("data/movies.list").each_line do |l|
+		File.read("data/movies.list").each_line do |l|
 			if match = movies_reg.match(l)			
 				unless match[match.length - 1].nil?
 				series = match[1]
@@ -69,7 +69,7 @@ def add_running_times(data)
 	datacom = data.prepare("UPDATE Movies set length=? WHERE title=? AND year=?;")
 	i = 0
   data.transaction do 
-		File.new("data/running-times.list").each_line do |l|
+		File.read("data/running-times.list").each_line do |l|
 			if match = running_times_reg.match(l)
 				datacom.execute!(match[3].to_i, match[1].tr(',".',''), match[2].to_i)
 			end
@@ -86,7 +86,7 @@ def add_budgeting
 	
 	datacom = $db.prepare("UPDATE Movies set budget=? WHERE title=? AND year=?;")
 	$db.transaction do 
-		File.new("data/business.list").each(hyphens) do |l|
+		File.read("data/business.list").each(hyphens) do |l|
 			if match = title_reg.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
 				datacom.execute!(bt[1].gsub!(",","").to_i, match[1].tr(',".',''), match[2].to_i) 
 			end
@@ -102,7 +102,7 @@ def add_mpaa_ratings_reasons
 	datacom = $db.prepare("UPDATE Movies set mpaa_rating=? WHERE title=? AND year=?;")
 	i = 0
 	$db.transaction do 
-		File.new("data/mpaa-ratings-reasons.list").each(hyphens) do |l|
+		File.read("data/mpaa-ratings-reasons.list").each(hyphens) do |l|
 			if match = title_reg.match(l.to_s) and rt = mpaa_reg.match(l.to_s)
 				datacom.execute!(rt[1], match[1].tr(',".',''), match[2].to_i)
 			end
@@ -117,7 +117,7 @@ def add_genres
 	$db.transaction do 
 		$db.execute "DELETE FROM Genres;"
 		
-		File.new("data/genres.list").each_line do |l|			
+		File.read("data/genres.list").each_line do |l|			
 			if match = genres_reg.match(l)				
 				datacom.execute!(match[3], match[1].tr(',".',''), match[2].to_i)
 			end
@@ -132,7 +132,7 @@ def add_ratings
 	datacom = $db.prepare("UPDATE Movies set imdb_votes=?, imdb_rating=?, imdb_rating_votes=? WHERE title=? AND year=?;")
 	$db.transaction
 	
-	File.new("data/ratings.list").each_line do |l|
+	File.read("data/ratings.list").each_line do |l|
 		if match = ratings_reg.match(l)
 			rating, votes, outof10, title, year = match[1], match[2], match[3], match[4], match[5]
 			datacom.execute!(votes, outof10, rating, title.tr(',".',''), year)
@@ -143,7 +143,7 @@ def add_ratings
 end
 
 def add_all
-	data = SQLite3::Database.new( "movies.sqlite3" )
+	data = create_db
 	
 	puts "Processing movies database"
 	add_movies(data)
@@ -158,12 +158,14 @@ def add_all
 	
 	add_genres(data)
 end
+
 if __FILE__ == $0
 
 
 	#download_files
 	#add_all
-	create_db
+	#data = create_db
+	extract_files
 	
 	puts "Movies added:"
 	#puts Movie.count()

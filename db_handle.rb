@@ -31,6 +31,8 @@ def create_db
 	db.execute("CREATE INDEX rmid on Ratings (movie_id)")
 	db.execute("CREATE INDEX gid on Genres (id)")
 	db.execute("CREATE INDEX gmid on Genres (movie_id)")
+	
+	return db
 
 end
 
