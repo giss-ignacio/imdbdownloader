@@ -79,13 +79,13 @@ def add_running_times(data)
 end
 
 
-def add_budgeting	
+def add_budgeting(data)
 	budgeting_reg = regex_form("budgeting")
 	title_reg = regex_form("title")
 	hyphens = "-" * 79
 	
-	datacom = $db.prepare("UPDATE Movies set budget=? WHERE title=? AND year=?;")
-	$db.transaction do 
+	datacom = data.prepare("UPDATE Movies set budget=? WHERE title=? AND year=?;")
+	data.transaction do 
 		File.read("data/business.list").each(hyphens) do |l|
 			if match = title_reg.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
 				datacom.execute!(bt[1].gsub!(",","").to_i, match[1].tr(',".',''), match[2].to_i) 
@@ -94,14 +94,14 @@ def add_budgeting
 	end
 end
 
-def add_mpaa_ratings_reasons
+def add_mpaa_ratings_reasons(data)
 	hyphens = "-" * 79
 	mpaa_reg = regex_form("mpaa_ratings_reasons")
 	title_reg = regex_form("title")
 
-	datacom = $db.prepare("UPDATE Movies set mpaa_rating=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies set mpaa_rating=? WHERE title=? AND year=?;")
 	i = 0
-	$db.transaction do 
+	data.transaction do 
 		File.read("data/mpaa-ratings-reasons.list").each(hyphens) do |l|
 			if match = title_reg.match(l.to_s) and rt = mpaa_reg.match(l.to_s)
 				datacom.execute!(rt[1], match[1].tr(',".',''), match[2].to_i)
@@ -110,12 +110,12 @@ def add_mpaa_ratings_reasons
 	end
 end
 
-def add_genres	
+def add_genres(data)	
 	genres_reg = regex_form(GENRES)	
 	
-	datacom = $db.prepare("INSERT INTO Genres (genre, movie_id) VALUES (?, (SELECT id FROM Movies WHERE title=? AND year=?));")
-	$db.transaction do 
-		$db.execute "DELETE FROM Genres;"
+	datacom = data.prepare("INSERT INTO Genres (genre, movie_id) VALUES (?, (SELECT id FROM Movies WHERE title=? AND year=?));")
+	data.transaction do 
+		data.execute "DELETE FROM Genres;"
 		
 		File.read("data/genres.list").each_line do |l|			
 			if match = genres_reg.match(l)				
@@ -126,11 +126,11 @@ def add_genres
 	end
 end
 
-def add_ratings	
+def add_ratings(data)	
 	ratings_reg = regex_form(RATINGS)
 
-	datacom = $db.prepare("UPDATE Movies set imdb_votes=?, imdb_rating=?, imdb_rating_votes=? WHERE title=? AND year=?;")
-	$db.transaction
+	datacom = data.prepare("UPDATE Movies set imdb_votes=?, imdb_rating=?, imdb_rating_votes=? WHERE title=? AND year=?;")
+	data.transaction
 	
 	File.read("data/ratings.list").each_line do |l|
 		if match = ratings_reg.match(l)
@@ -138,7 +138,7 @@ def add_ratings
 			datacom.execute!(votes, outof10, rating, title.tr(',".',''), year)
 		end
 	end
-	$db.commit
+	data.commit
 	
 end
 

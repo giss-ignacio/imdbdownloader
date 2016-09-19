@@ -42,7 +42,7 @@ def download_files
 end
 
 def extract_files
-	Dir.glob('data/*.gz') do |gz_file|
+	Dir.glob('#{DLD_DIR}/*.gz') do |gz_file|
 		Zlib::GzipReader.open(gz_file) do | input_stream |
 			puts gz_file
 			File.open(gz_file.chomp('.gz'), "w") do |output_stream|
