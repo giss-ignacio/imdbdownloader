@@ -2,6 +2,7 @@ require 'rubygems'
 require "highline/import"
 require_relative 'download'
 require_relative 'db_handle'
+require_relative 'db_to_csv'
 
 MOVIES = "movies"
 RUNNING_TIMES = "running_times"
@@ -11,6 +12,7 @@ HYPHENS = "-" * 79
 MPAA_RAT = "mpaa_ratings_reasons"
 RATINGS = "ratings"
 GENRES = "genres"
+
 
 
 
@@ -67,7 +69,7 @@ end
 def add_running_times(data)
 	running_times_reg = regex_form(TIMES)	
 
-	datacom = data.prepare("UPDATE Movies set length=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies set running_times=? WHERE title=? AND year=?;")
 	i = 0
   data.transaction do 
 		File.read("data/running-times.list").each_line do |l|
@@ -85,7 +87,7 @@ def add_budgeting(data)
 	title_reg = regex_form("title")
 	hyphens = "-" * 79
 	
-	datacom = data.prepare("UPDATE Movies set budget=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies set budgeting=? WHERE title=? AND year=?;")
 	data.transaction do 
 		File.read("data/business.list").each(hyphens) do |l|
 			if match = title_reg.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
@@ -100,7 +102,7 @@ def add_mpaa_ratings_reasons(data)
 	mpaa_reg = regex_form("mpaa_ratings_reasons")
 	title_reg = regex_form("title")
 
-	datacom = data.prepare("UPDATE Movies set mpaa_rating=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies set mpaa_ratings=? WHERE title=? AND year=?;")
 	i = 0
 	data.transaction do 
 		File.read("data/mpaa-ratings-reasons.list").each(hyphens) do |l|
@@ -130,7 +132,7 @@ end
 def add_ratings(data)	
 	ratings_reg = regex_form(RATINGS)
 
-	datacom = data.prepare("UPDATE Movies set imdb_votes=?, imdb_rating=?, imdb_rating_votes=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies set votes=?, ratings=?, rating_votes=? WHERE title=? AND year=?;")
 	data.transaction
 	
 	File.read("data/ratings.list").each_line do |l|
@@ -160,10 +162,17 @@ def add_all
 	add_genres(data)
 end
 
+def database_to_csv
+	database = SQLite3::Database.new( DBNAME )
+	db_to_csv(database)	
+end
+
 def do_everything
 	download_files
 	add_all
 end
+
+
 
 def show_menu
 	Gem.win_platform? ? (system "cls") : (system "clear")
@@ -175,6 +184,7 @@ def show_menu
 			menu.choice(:'Do everything') { do_everything }
 			menu.choice(:'Download files') { download_and_extract }
 			menu.choice(:'Add all movies to database') { add_all }
+			menu.choice(:'Export database to csv') { database_to_csv }
 			menu.choice(:Quit, "Exit program.") { exit }
 		end
 	end
@@ -182,17 +192,9 @@ end
 
 
 if __FILE__ == $0
-
-
-	#download_files
-	#add_all
-	#data = create_db
-	#extract_files
 	
-	show_menu
-	
-	puts "Movies added:"
-	#puts Movie.count()
+	# Main Menu #
+	show_menu	
 	
 end
 

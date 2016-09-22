@@ -1,6 +1,6 @@
 require 'sqlite3'
 
-DBNAME = "movies.sqlite"
+DBNAME = "im_db.sqlite"
 
 def create_db
 	File.delete(DBNAME) if File.exists?DBNAME
@@ -10,12 +10,12 @@ def create_db
 				id INTEGER PRIMARY KEY,
 				title varchar(250),
 				year integer,
-				budget integer,
-				length integer,
-				imdb_rating float,
-				imdb_votes integer,
-				imdb_rating_votes varchar(10),
-				mpaa_rating varchar(5),
+				budgeting integer,
+				running_times integer,
+				ratings float,
+				votes integer,
+				rating_votes varchar(10),
+				mpaa_ratings varchar(5),
 				is_series numeric
 				)")
 				
