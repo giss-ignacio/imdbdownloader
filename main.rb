@@ -17,8 +17,8 @@ GENRES = "genres"
 
 
 def regex_form(category)
-	reg_form
-	puts case category
+	reg_form = /(.*?)/i
+	case category
 	when MOVIES
 		reg_form = /^(.+) \s+ \([0-9]+\) \s? (\{.+\})? (\(.+\))? \s+ ([0-9]+(-[0-9\?]+)?)$/ix
 	when TITLE
@@ -39,7 +39,7 @@ def regex_form(category)
 
 end
 
-def add_movies	
+def add_movies(data)	
 	movies_reg = regex_form(MOVIES)
 		
 	match_prev = ['', '', '', '', '']
@@ -50,7 +50,7 @@ def add_movies
 	data.transaction do
 		data.execute "DELETE FROM Movies;"
 	
-		File.read("data/movies.list").each_line do |l|
+		File.read("#{DLD_DIR}/#{MOVIES}.list").each_line do |l|
 			if match = movies_reg.match(l)			
 				unless match[match.length - 1].nil?
 				series = match[1]
@@ -67,12 +67,12 @@ def add_movies
 end
 
 def add_running_times(data)
-	running_times_reg = regex_form(TIMES)	
+	running_times_reg = regex_form(RUNNING_TIMES)	
 
 	datacom = data.prepare("UPDATE Movies set running_times=? WHERE title=? AND year=?;")
 	i = 0
   data.transaction do 
-		File.read("data/running-times.list").each_line do |l|
+		File.read("#{DLD_DIR}/#{RUNNING_TIMES}.list").each_line do |l|
 			if match = running_times_reg.match(l)
 				datacom.execute!(match[3].to_i, match[1].tr(',".',''), match[2].to_i)
 			end
@@ -83,13 +83,12 @@ end
 
 
 def add_budgeting(data)
-	budgeting_reg = regex_form("budgeting")
-	title_reg = regex_form("title")
-	hyphens = "-" * 79
+	budgeting_reg = regex_form(BUDGETING)
+	title_reg = regex_form(TITLE)	
 	
 	datacom = data.prepare("UPDATE Movies set budgeting=? WHERE title=? AND year=?;")
 	data.transaction do 
-		File.read("data/business.list").each(hyphens) do |l|
+		File.read("#{DLD_DIR}/business.list").each(HYPHENS) do |l|
 			if match = title_reg.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
 				datacom.execute!(bt[1].gsub!(",","").to_i, match[1].tr(',".',''), match[2].to_i) 
 			end
@@ -97,15 +96,14 @@ def add_budgeting(data)
 	end
 end
 
-def add_mpaa_ratings_reasons(data)
-	hyphens = "-" * 79
-	mpaa_reg = regex_form("mpaa_ratings_reasons")
-	title_reg = regex_form("title")
+def add_mpaa_ratings_reasons(data)	
+	mpaa_reg = regex_form(MPAA_RAT)
+	title_reg = regex_form(TITLE)
 
 	datacom = data.prepare("UPDATE Movies set mpaa_ratings=? WHERE title=? AND year=?;")
 	i = 0
 	data.transaction do 
-		File.read("data/mpaa-ratings-reasons.list").each(hyphens) do |l|
+		File.read("#{DLD_DIR}/#{MPAA_RAT}.list").each(HYPHENS) do |l|
 			if match = title_reg.match(l.to_s) and rt = mpaa_reg.match(l.to_s)
 				datacom.execute!(rt[1], match[1].tr(',".',''), match[2].to_i)
 			end
@@ -120,7 +118,7 @@ def add_genres(data)
 	data.transaction do 
 		data.execute "DELETE FROM Genres;"
 		
-		File.read("data/genres.list").each_line do |l|			
+		File.read("#{DLD_DIR}/#{GENRES}.list").each_line do |l|			
 			if match = genres_reg.match(l)				
 				datacom.execute!(match[3], match[1].tr(',".',''), match[2].to_i)
 			end
@@ -135,7 +133,7 @@ def add_ratings(data)
 	datacom = data.prepare("UPDATE Movies set votes=?, ratings=?, rating_votes=? WHERE title=? AND year=?;")
 	data.transaction
 	
-	File.read("data/ratings.list").each_line do |l|
+	File.read("#{DLD_DIR}/#{RATINGS}.list").each_line do |l|
 		if match = ratings_reg.match(l)
 			rating, votes, outof10, title, year = match[1], match[2], match[3], match[4], match[5]
 			datacom.execute!(votes, outof10, rating, title.tr(',".',''), year)
@@ -168,10 +166,10 @@ def database_to_csv
 end
 
 def do_everything
-	download_files
+	download_and_extract
 	add_all
+	database_to_csv
 end
-
 
 
 def show_menu
@@ -179,7 +177,7 @@ def show_menu
 	puts
 	loop do
 		choose do |menu|
-			puts "Imdbdownloader \n\n"
+			puts "ImdbDownloader \n\n"
 			menu.prompt = "Select an option: "
 			menu.choice(:'Do everything') { do_everything }
 			menu.choice(:'Download files') { download_and_extract }
@@ -195,6 +193,6 @@ if __FILE__ == $0
 	
 	# Main Menu #
 	show_menu	
-	
+		
 end
 

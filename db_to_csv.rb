@@ -5,6 +5,8 @@ require "set"
 
 
 
+
+
 def db_to_csv(data)
 	db_com = "SELECT Movies.* 
 	FROM Movies
@@ -21,7 +23,7 @@ def db_to_csv(data)
 		out << [
 			'title', 'year', 'length', 'budget', 
 			'rating', 'votes', (1..10).map{|i| "r" + i.to_s}, 
-			'mpaa', GENRES , 'is_series'
+			'mpaa', GENRES_NM , 'is_series'
 		].flatten.join(",") + "\n"
 		data.execute(db_com) do |row| 
 			perc_step += 1
