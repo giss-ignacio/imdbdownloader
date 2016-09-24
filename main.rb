@@ -5,11 +5,11 @@ require_relative 'db_handle'
 require_relative 'db_to_csv'
 
 MOVIES = "movies"
-RUNNING_TIMES = "running_times"
+RUNNING_TIMES = "running-times"
 BUDGETING = "budgeting"
 TITLE = "title"
-HYPHENS = "-" * 79
-MPAA_RAT = "mpaa_ratings_reasons"
+HYPHENS = /(-{79})/i
+MPAA_RAT = "mpaa-ratings-reasons"
 RATINGS = "ratings"
 GENRES = "genres"
 
@@ -20,19 +20,19 @@ def regex_form(category)
 	reg_form = /(.*?)/i
 	case category
 	when MOVIES
-		reg_form = /^(.+) \s+ \([0-9]+\) \s? (\{.+\})? (\(.+\))? \s+ ([0-9]+(-[0-9\?]+)?)$/ix
+		reg_form = /^(.+) \s+ \([0-9]+\) \s? (\{.+\})?  \s+ ([0-9]+(-[0-9\?]+)?)$/ix
 	when TITLE
-		reg_form = /MV:\s+(.+)? \s \(([0-9]+)\)/ix
+		reg_form = /MV:\s+(.+)? \s \\)/ix
 	when RUNNING_TIMES
 		reg_form = /^(.+) \s+ \(([0-9]+)\) \s+ (?:[a-z]+:)?([0-9]+)/ix
 	when BUDGETING
 		reg_form = /BT:\s+USD\s+([0-9,.]+)/ix
 	when MPAA_RAT
-		reg_form = /RE: Rated (.*?) /i
+		reg_form = /RE:  (.*?) /i
 	when RATINGS
-		reg_form = /([0-9.\*]+) \s+ ([0-9]+) \s+ ([0-9.]+) \s+ (.+)? \s+ \(([0-9]+)\)/ix
+		reg_form = /([0-9.\*]+)  \s+ (.+)? \s+ \(([0-9]+)\)/ix
 	when GENRES
-		reg_form = /^(.+)? \s+ \(([0-9]+)\) (?:\s*[({].*[})])*  \s+(.*?)$/ix	
+		reg_form = /^(.+)? \s+ \(([0-9]+)\) ( \s+(.*?)$/ix	
 	end
 	
 	return reg_form
@@ -45,12 +45,14 @@ def add_movies(data)
 	match_prev = ['', '', '', '', '']
 	series = ""
 
-	datacom = data.prepare("INSERT INTO Movies (title, year, is_series) VALUES (?, ?, ?);")
+	datacom = data.prepare("INSERT INTO Movies.. (title, year, is_series) ;")
 	i = 0
 	data.transaction do
 		data.execute "DELETE FROM Movies;"
-	
-		File.read("#{DLD_DIR}/#{MOVIES}.list").each_line do |l|
+		
+		filename = "#{DLD_DIR}/#{MOVIES}.list"
+		tot_count = IO.readlines(filename).size 
+		File.open(filename, "r:Windows-1252").each_line do |l|			
 			if match = movies_reg.match(l)			
 				unless match[match.length - 1].nil?
 				series = match[1]
@@ -61,7 +63,7 @@ def add_movies(data)
 				end
 				end
 			end
-		end
+		end		
 	end
 		
 end
@@ -69,14 +71,17 @@ end
 def add_running_times(data)
 	running_times_reg = regex_form(RUNNING_TIMES)	
 
-	datacom = data.prepare("UPDATE Movies set running_times=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies.. set running_times=? ;")
 	i = 0
   data.transaction do 
-		File.read("#{DLD_DIR}/#{RUNNING_TIMES}.list").each_line do |l|
+		filename = "#{DLD_DIR}/#{RUNNING_TIMES}.list"
+		tot_count = IO.readlines(filename).size  		
+		File.open(filename, "r:Windows-1252").each_line do |l|			
 			if match = running_times_reg.match(l)
 				datacom.execute!(match[3].to_i, match[1].tr(',".',''), match[2].to_i)
 			end
 		end
+		
   end
 		
 end
@@ -86,54 +91,65 @@ def add_budgeting(data)
 	budgeting_reg = regex_form(BUDGETING)
 	title_reg = regex_form(TITLE)	
 	
-	datacom = data.prepare("UPDATE Movies set budgeting=? WHERE title=? AND year=?;")
-	data.transaction do 
-		File.read("#{DLD_DIR}/business.list").each(HYPHENS) do |l|
+	datacom = data.prepare("UPDATE Movies.. set budgeting=? ;")
+	filename = "#{DLD_DIR}/business.list"
+	business = File.open(filename, "r:Windows-1252").read.split(HYPHENS)
+	tot_count = business.map.size  		
+		
+	data.transaction do 		
+		business.map do |l|			
 			if match = title_reg.match(l.to_s) and bt = budgeting_reg.match(l.to_s)
 				datacom.execute!(bt[1].gsub!(",","").to_i, match[1].tr(',".',''), match[2].to_i) 
 			end
 		end
-	end
+	end	
+	
 end
 
 def add_mpaa_ratings_reasons(data)	
 	mpaa_reg = regex_form(MPAA_RAT)
 	title_reg = regex_form(TITLE)
 
-	datacom = data.prepare("UPDATE Movies set mpaa_ratings=? WHERE title=? AND year=?;")
-	i = 0
-	data.transaction do 
-		File.read("#{DLD_DIR}/#{MPAA_RAT}.list").each(HYPHENS) do |l|
+	datacom = data.prepare("UPDATE Movies. set mpaa_ratings=? ;")
+	filename = "#{DLD_DIR}/#{MPAA_RAT}.list"
+	
+	mpaa_ratings = File.open(filename, "r:Windows-1252").read.split(HYPHENS)
+	tot_count = mpaa_ratings.map.size  		
+	data.transaction do 		
+		mpaa_ratings.map do |l|			
 			if match = title_reg.match(l.to_s) and rt = mpaa_reg.match(l.to_s)
 				datacom.execute!(rt[1], match[1].tr(',".',''), match[2].to_i)
 			end
 		end
-	end
+	end	
 end
 
 def add_genres(data)	
 	genres_reg = regex_form(GENRES)	
 	
-	datacom = data.prepare("INSERT INTO Genres (genre, movie_id) VALUES (?, (SELECT id FROM Movies WHERE title=? AND year=?));")
+	datacom = data.prepare("INSERT INTO Genres.. (genre, movie_id) VALUES (?);")
 	data.transaction do 
+		filename = "#{DLD_DIR}/#{GENRES}.list"
+		tot_count = IO.readlines(filename).size 		
 		data.execute "DELETE FROM Genres;"
 		
-		File.read("#{DLD_DIR}/#{GENRES}.list").each_line do |l|			
+		File.open(filename, "r:Windows-1252").each_line do |l|				
 			if match = genres_reg.match(l)				
 				datacom.execute!(match[3], match[1].tr(',".',''), match[2].to_i)
 			end
 		end
-		puts
+		puts		
 	end
 end
 
 def add_ratings(data)	
 	ratings_reg = regex_form(RATINGS)
 
-	datacom = data.prepare("UPDATE Movies set votes=?, ratings=?, rating_votes=? WHERE title=? AND year=?;")
+	datacom = data.prepare("UPDATE Movies.. set votes=?, ratings=?, rating_votes=? ;")
 	data.transaction
-	
-	File.read("#{DLD_DIR}/#{RATINGS}.list").each_line do |l|
+		filename = "#{DLD_DIR}/#{RATINGS}.list"
+		tot_count = IO.readlines(filename).size  		
+	File.open(filename, "r:Windows-1252").each_line do |l|			
 		if match = ratings_reg.match(l)
 			rating, votes, outof10, title, year = match[1], match[2], match[3], match[4], match[5]
 			datacom.execute!(votes, outof10, rating, title.tr(',".',''), year)
@@ -147,16 +163,23 @@ def add_all
 	data = create_db
 	
 	puts "Processing movies database"
+	
+	puts "Adding movies"
 	add_movies(data)
 	
+	puts "Adding running times"
 	add_running_times(data)
 	
+	puts "Adding budgeting"
 	add_budgeting(data)
 	
+	puts "Adding mpaa ratings reasons"
 	add_mpaa_ratings_reasons(data)
 	
+	puts "Adding ratings"
 	add_ratings(data)
 	
+	puts "Adding genres"
 	add_genres(data)
 end
 
@@ -177,7 +200,7 @@ def show_menu
 	puts
 	loop do
 		choose do |menu|
-			puts "ImdbDownloader \n\n"
+			puts "\n\nImdbDownloader \n\n"
 			menu.prompt = "Select an option: "
 			menu.choice(:'Do everything') { do_everything }
 			menu.choice(:'Download files') { download_and_extract }
@@ -193,6 +216,6 @@ if __FILE__ == $0
 	
 	# Main Menu #
 	show_menu	
-		
+	
 end
 
