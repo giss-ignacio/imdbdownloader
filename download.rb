@@ -18,25 +18,15 @@ def download_files
 		filename = file.split.last
 		puts "Downloading " + filename		
 
-		filesize = ftp.size(filename)
-		transferred = 0
-		perc_orig = 0
-		filesizemb = filesize/1048576
+		filesize = ftp.size(filename)		
+		filesizemb = filesize/1048576		
 		puts "File size: #{filesizemb} MB"
-		ftp.getbinaryfile(filename, "#{DLD_DIR}/#{filename}", 1024) { |data|
-		transferred += data.size
-		perc_upd = ((transferred).to_f/filesize.to_f)*100
-		if perc_orig < perc_upd -1
-			print "#{perc_upd.round}% complete \r"
-			$stdout.flush
-			perc_orig = perc_upd
-		end		
-		}
-		$stdout.flush
-		if perc_orig >= 99
-			puts "100% complete"
-		end
+		progressbar = ProgressBar.create
+		progressbar.total = filesize
 		
+		ftp.getbinaryfile(filename, "#{DLD_DIR}/#{filename}", 1024) { |data|
+		progressbar.progress += data.size		
+		}		
 	end
 	ftp.close
 end
